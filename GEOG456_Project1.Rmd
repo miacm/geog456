@@ -1,0 +1,74 @@
+---
+title: "GEOG456_P1_BikeCrash"
+author: "Mia Colloredo-Mansfeld"
+date: "1/29/2020"
+output: 
+  html_document: default
+  pdf_document: default
+  md_document:
+    variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Temporal Data Visualization
+
+This tutorial walks thorugh producing a visual using temporal data. The data is from the NCDOT and includes 60 variables about bike-motor vehicle crashes in North Carolina from 2001-2018. 
+
+The first step is importing the data. 
+
+```{r}
+the_file<- "/Users/miacm/Documents/Spring_2020/GEGO_456/Project1/NCDOT_Bike_Crash_Data_fixed2.csv" #this identifies the location of the data on your computer, copy the pathname to direct r to the location of the saved data.
+df<- read.csv (the_file) #opens csv file
+```
+
+## Understanding the data
+
+To figure out interesting variables to explore further, we can make some simple frequency tables:
+
+```{r}
+plot(table(df$CrashHour)) #plots the frequency of crashes each hour using the CrashHour variable
+plot(table(df$AgeGrp)) #plots the frequency of crashes in each agegroup using the AgeGrp variable
+```
+
+## Making prettier plots
+
+Now that we have a better sense for what some of our data looks like, we want to make it look better. To do this, we need to import a few libraries. 
+
+```{r}
+library(ggplot2) #this opens the ggplot2 library
+library(ggridges) #this opens the ggridges library
+library(RColorBrewer) #this opens the RColorBrewer library
+```
+
+##Ridge Plot
+Since we are looking at number of crashes per age group over the course of a day, we are going to use a ridge plot in order to see the spread of crash frequency across all 24 hours of the day. 
+
+```{r}
+ggplot(df, aes(x = CrashHour, y = AgeGrp, fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01)
+#This will produce a plot with CrashHour along the x axis and AgeGrp along the Y axis.
+```
+
+We want to pick colors that better portray our data. We will use color brewer to do that. 
+
+```{r}
+display.brewer.all() #Shows all the color gradients we can pick from
+ggplot(df, aes(x = CrashHour, y = AgeGrp, fill = ..x..)) + geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01)+ scale_fill_gradientn(colours=colorRampPalette((brewer.pal(9,"YlOrRd")))(100)) #This changes the colors to our color gradient of choice
+```
+
+Now we want to get the color gradient to reflect the frequencies of crashes each hour so we can understand the mean crash time. 
+
+```{r}
+ggplot(df, aes(x=CrashHour, y=AgeGrp, fill=0.5 - abs(0.5-..ecdf..))) + stat_density_ridges(geom = "density_ridges_gradient",calc_ecdf = TRUE)+ scale_fill_gradientn(colours = colorRampPalette((brewer.pal(9,"YlOrRd")))(100)) +theme_ridges() + scale_y_discrete(expand = c(0.01, 0)) #Now the color gradient reflects the mean crash hour for each age group
+```
+
+We can also add a title, adjust the scale on the x-axis, and change the names of the x and y axes. 
+
+```{r}
+ggplot(df, aes(x=CrashHour, y=AgeGrp, fill=0.5 - abs(0.5-..ecdf..))) + stat_density_ridges(geom = "density_ridges_gradient", calc_ecdf = TRUE)+ scale_fill_gradientn(name = "Crash Probability", colours = colorRampPalette((brewer.pal(9,"YlOrRd")))(100)) + theme_ridges() + scale_y_discrete(expand = c(0.01, 0)) + scale_x_continuous(breaks=c(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24)) + labs(title = 'Bike Crashes by Hour and Age Group', x = "Crash Hour", y="Age Group") #We added code to change the names of our axes and to adjust the x-axis scale.
+```
+
+  
